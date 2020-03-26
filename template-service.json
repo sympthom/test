@@ -31,9 +31,7 @@
         true,
         false
       ]
-    },
-    "applicationLogsSasUri": { "type": "string" },
-    "webserverLogsSasUri": { "type": "string" }
+    }
   },
   "variables": {
     "prefix": "[replace(resourceGroup().name,'sof-', '')]",
@@ -263,7 +261,7 @@
           },
           "azureBlobStorage": {
             "level": "Verbose", //Verbose, Information, Warning, Error
-            "sasUrl": "[parameters('applicationLogsSasUri')]",
+            "sasUrl": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))).primaryEndpoints.blob, variables('applicationLogsContainerName'), '?', listAccountSas(variables('storageAccountName'), '2018-02-01', variables('listAccountSasRequestContent')).accountSasToken)]",
             "retentionInDays": 7
           }
         },
@@ -275,7 +273,7 @@
           },
           "azureBlobStorage": {
             "enabled": true,
-            "sasUrl": "[parameters('webserverLogsSasUri')]",
+            "sasUrl": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))).primaryEndpoints.blob, variables('webserverLogsContainerName'), '?', listAccountSas(variables('storageAccountName'), '2018-02-01', variables('listAccountSasRequestContent')).accountSasToken)]",
             "retentionInDays": 7
           }
         },

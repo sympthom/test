@@ -2,11 +2,15 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
-   
+    "environmentStage": {
+      "type": "string"
+    }
   },
   "variables": {
     "instanceName": "[replace(resourceGroup().name, 'sof-', '')]",
-    "applicationInsightsName": "[concat(variables('instanceName'),'-insight-ai')]"
+    "applicationInsightsName": "[concat(variables('instanceName'),'-insight-ai')]",
+    "appServicePlanName": "windowshost",
+    "appServiceName": "exchangerate"
   },
   "resources": [
     {
@@ -16,7 +20,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[uri(deployment().properties.templateLink.uri, 'template-applicationinsights.json')]",
+          "uri": "https://raw.githubusercontent.com/sympthom/test/master/template-applicationinsights.json",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
@@ -25,6 +29,71 @@
       },
       "dependsOn": [
 
+      ]
+    },
+    {
+      "apiVersion": "2018-05-01",
+      "name": "[variables('appServicePlanName')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "https://raw.githubusercontent.com/sympthom/test/master/template-appserviceplan-windows.json",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "resourceName": { "value": "[variables('appServicePlanName')]" }
+        }
+      },
+      "dependsOn": [
+
+      ]
+    },
+    {
+      "apiVersion": "2018-05-01",
+      "name": "[variables('appServiceName')]",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "https://raw.githubusercontent.com/sympthom/test/master/template-service.json",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "resourceName": { "value": "[variables('appServiceName')]" },
+          "environmentStage": { "value": "[parameters('environmentStage')]" },
+          "planId": { "value": "[reference(variables('appServicePlanName')).outputs.resourceId.value]" },
+          "appSettings": {
+            "value": [
+              {
+                "name": "Hosting:Environment",
+                "value": "[parameters('environmentStage')]"
+              },
+              {
+                "name": "ASPNET_ENV",
+                "value": "[parameters('environmentStage')]"
+              },
+              {
+                "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                "value": "4.1.2"
+              },
+              {
+                "name": "WEBSITE_HTTPLOGGING_RETENTION_DAYS",
+                "value": "7"
+              }
+            ]
+          },
+          "connectionStrings": {
+            "value": [
+
+            ]
+          },
+          "applicationInsightsKey": { "value": "[reference(resourceId('Microsoft.Insights/components', variables('applicationInsightsName')), '2015-05-01').InstrumentationKey]" }
+        }
+      },
+      "dependsOn": [
+        "[variables('applicationInsightsName')]",
+        "[variables('appServicePlanName')]"
       ]
     }
   ]
