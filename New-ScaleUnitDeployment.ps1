@@ -1,0 +1,1 @@
+New-AzureRmResourceGroupDeployment -Name $ResourceGroupName -ResourceGroupName $ResourceGroupName -Mode Incremental -TemplateFile $TemplateFile -TemplateParameterFile $TemplateParameterFile
